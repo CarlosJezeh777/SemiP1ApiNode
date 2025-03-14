@@ -1,64 +1,67 @@
-# EbookVault API
+# Express API Documentation
 
-EbookVault es una plataforma de libros electrónicos completamente en la nube inspirada en Kindle, diseñada para promover el hábito de lectura entre los guatemaltecos. Esta API proporciona las funcionalidades necesarias para gestionar usuarios y libros en la plataforma.
+## Descripción del Proyecto
+Este proyecto es una API RESTful construida con Express.js que permite gestionar usuarios y libros. Proporciona funcionalidades como registro de usuarios, inicio de sesión, actualización de perfil y gestión de libros.
 
 ## Estructura del Proyecto
+```
+express-api
+├── src
+│   ├── app.js                # Punto de entrada de la aplicación
+│   ├── controllers           # Controladores para manejar la lógica de negocio
+│   │   └── userController.js  # Controlador para operaciones de usuario
+│   ├── routes                # Rutas de la API
+│   │   └── userRoutes.js      # Rutas relacionadas con usuarios
+│   └── config                # Configuración de la aplicación
+│       └── dbConfig.js        # Configuración de la base de datos
+├── package.json              # Configuración de npm y dependencias
+├── .env                      # Variables de entorno
+└── README.md                 # Documentación del proyecto
+```
 
-El proyecto está organizado en varias capas para mantener una arquitectura limpia y escalable:
-
-- **src**: Contiene el código fuente de la aplicación.
-  - **controllers**: Maneja la lógica de las rutas y las interacciones con los servicios.
-    - `authController.js`: Funciones para la autenticación de usuarios.
-    - `bookController.js`: Funciones para manejar operaciones relacionadas con los libros.
-    - `userController.js`: Funciones para manejar operaciones relacionadas con los usuarios.
-  - **services**: Contiene la lógica de negocio.
-    - `authService.js`: Lógica para la autenticación de usuarios.
-    - `bookService.js`: Lógica para la gestión de libros.
-    - `userService.js`: Lógica para la gestión de usuarios.
-  - **repositories**: Maneja el acceso a datos.
-    - `bookRepository.js`: Operaciones de acceso a datos relacionadas con los libros.
-    - `userRepository.js`: Operaciones de acceso a datos relacionadas con los usuarios.
-  - **models**: Define los modelos de datos.
-    - `bookModel.js`: Modelo de datos para los libros.
-    - `userModel.js`: Modelo de datos para los usuarios.
-  - **routes**: Define las rutas de la API.
-    - `authRoutes.js`: Rutas relacionadas con la autenticación de usuarios.
-    - `bookRoutes.js`: Rutas relacionadas con la gestión de libros.
-    - `userRoutes.js`: Rutas relacionadas con la gestión de usuarios.
-  - **config**: Contiene la configuración de la aplicación.
-    - `dbConfig.js`: Configuración de la conexión a la base de datos MySQL.
-  - `app.js`: Punto de entrada de la aplicación.
-  - `server.js`: Inicia el servidor y escucha en un puerto específico.
+## Requisitos
+- Node.js
+- npm
 
 ## Instalación
-
 1. Clona el repositorio:
    ```
    git clone <URL_DEL_REPOSITORIO>
+   cd express-api
    ```
-2. Navega al directorio del proyecto:
-   ```
-   cd ebookvault-api
-   ```
-3. Instala las dependencias:
+
+2. Instala las dependencias:
    ```
    npm install
    ```
-4. Configura las variables de entorno en el archivo `.env`.
 
-## Uso
+3. Configura las variables de entorno en el archivo `.env`:
+   ```
+   DB_HOST=tu_host
+   DB_USER=tu_usuario
+   DB_PASSWORD=tu_contraseña
+   DB_NAME=tu_base_de_datos
+   AWS_ACCESS_KEY_ID=tu_access_key
+   AWS_SECRET_ACCESS_KEY=tu_secret_key
+   AWS_REGION=tu_region
+   S3_BUCKET=tu_bucket
+   ```
 
-Para iniciar el servidor, ejecuta el siguiente comando:
+## Ejecución
+Para iniciar la API, ejecuta el siguiente comando:
 ```
 npm start
 ```
 
-La API estará disponible en `http://localhost:PUERTO`, donde `PUERTO` es el puerto configurado en el archivo `server.js`.
+La API estará disponible en `http://localhost:5000`.
+
+## Endpoints
+- `POST /registrar`: Registra un nuevo usuario.
+- `POST /login`: Inicia sesión de un usuario.
+- `POST /update_profile`: Actualiza el perfil del usuario.
 
 ## Contribuciones
-
 Las contribuciones son bienvenidas. Si deseas contribuir, por favor abre un issue o envía un pull request.
 
 ## Licencia
-
 Este proyecto está bajo la Licencia MIT.

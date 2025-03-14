@@ -1,11 +1,14 @@
-const express = require('express');
-const bookController = require('../controllers/bookController');
+import express from 'express';
+import BookController from '../controllers/bookController.js';
 
 const router = express.Router();
+const bookController = new BookController();
 
-router.post('/libros', bookController.getAllBooksByUserId);
-router.post('/cargar-libro', bookController.createBook);
-router.put('/actualizar-libro', bookController.updateBook);
-router.delete('/eliminar-libro', bookController.deleteBook);
 
-module.exports = router;
+router.post('/cargar-libro', bookController.loadBook);
+router.post('/actualizar-libro', bookController.updateBook);
+router.post('/eliminar-libro', bookController.deleteBook);
+router.post('/libros', bookController.getBooks);
+router.post('/adquisicion', bookController.acquireBook);
+
+export default router;

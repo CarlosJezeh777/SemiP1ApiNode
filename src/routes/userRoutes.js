@@ -1,21 +1,15 @@
 const express = require('express');
-const userController = require('../controllers/userController');
+const UserController = require('../controllers/userController');
 
 const router = express.Router();
-router.post('/update_profile', userController.updateProfile);
+
+// Rutas para el registro de usuario
+router.post('/registrar', UserController.registrarUsuario);
+
+// Rutas para el inicio de sesión de usuario
+router.post('/login', UserController.loginUsuario);
+
+// Rutas para la actualización del perfil de usuario
+router.post('/update_profile', UserController.updateProfile);
 
 module.exports = router;
-/* // Route for user registration
-router.post('/register', userController.registerUser);
-
-// Route for user login
-router.post('/login', userController.loginUser); */
-
-/* // Route for getting user profile
-router.get('/profile', userController.getUserProfile);
-
-// Route for updating user profile
-router.put('/profile', userController.updateUserProfile);
-
-// Route for getting user's acquired books
-router.get('/my-books', userController.getUserBooks); */

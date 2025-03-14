@@ -1,23 +1,21 @@
-const mysql = require('mysql2/promise');
+const mysql = require('mysql');
+require('dotenv').config();
 
 const dbConfig = {
-    host: 'semi1-p1-1s2025.cbyasqy4w8y7.us-east-2.rds.amazonaws.com',
-    user: 'lastpass',
-    password: 'gQVk58bzt66bq9vBh3T',
-    database: 'ebookvault',
-    port: 3306,
-    connectTimeout: 10000
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 };
 
-const initializeDatabase = async () => {
-    try {
-        const connection = await mysql.createConnection(dbConfig);
-        console.log('Connected to the MySQL database.');
-        return connection;
-    } catch (error) {
-        console.error('Database connection failed:', error);
-        process.exit(1);
+const connection = mysql.createConnection(dbConfig);
+
+connection.connect((err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err);
+        return;
     }
-};
+    console.log('Connected to the database');
+});
 
-module.exports = initializeDatabase;
+module.exports = connection;

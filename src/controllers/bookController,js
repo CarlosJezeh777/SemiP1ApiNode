@@ -1,0 +1,208 @@
+import { db } from '../config/dbConfig.js';
+import AWS from 'aws-sdk';
+import base64 from 'base64-js';
+import random from 'random';
+
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+});
+
+class BookController {
+    async loadBook(req, res) {
+        const data = req.body;
+        let urlPortada = '';
+        let urlPdf = '';
+        const generateName = data.nombre.replace(" ", "_") + random.int(0, 9000);
+
+        try {
+            const imageData = Buffer.from(base64.toByteArray(data.imagen_portada));
+            const nameKey = `Fotos/${generateName}.jpg`;
+
+            await s3.putObject({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: nameKey,
+                Body: imageData,
+                ContentType: 'image/jpeg'
+            }).promise();
+
+            urlPortada = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${nameKey}`;
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            return res.status(401).json({ error: 'No se pudo subir la imagen' });
+        }
+
+        try {
+            const pdfData = Buffer.from(base64.toByteArray(data.archivo_pdf));
+            const nameKey = `Libros/${generateName}.pdf`;
+
+            await s3.putObject({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: nameKey,
+                Body: pdfData,
+                ContentType: 'application/pdf'
+            }).promise();
+
+            urlPdf = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${nameKey}`;
+        } catch (error) {
+            console.error("Error uploading PDF:", error);
+            return res.status(401).json({ error: 'No se pudo subir el PDF' });
+        }
+
+        const query = `
+            INSERT INTO libros (titulo, autor, portada_url, sinopsis, año_publicacion, pdf_url, etiquetas)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [
+            data.nombre,
+            data.autor,
+            urlPortada,
+            data.sinopsis,
+            data.año_publicacion,
+            urlPdf,
+            data.categorias
+        ];
+
+        try {
+            const [result] = await db.execute(query, values);
+            return res.status(200).json({ mensaje: 'Libro creado correctamente' });
+        } catch (error) {
+            console.error(error);
+            return res.status(401).json({ error: 'No se pudo crear el libro' });
+        }
+    }
+
+    async updateBook(req, res) {
+        const data = req.body;
+
+        if (data.imagen_portada) {
+            try {
+                const imageData = Buffer.from(base64.toByteArray(data.imagen_portada));
+                const randomNumber = random.int(1, 9000);
+                const nameKey = `Fotos/${data.nombre.replace(' ', '_')}_${randomNumber}.jpg`;
+
+                await s3.putObject({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: nameKey,
+                    Body: imageData,
+                    ContentType: 'image/jpeg'
+                }).promise();
+
+                data.imagen_portada = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${nameKey}`;
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                return res.status(401).json({ error: 'No se pudo subir la imagen' });
+            }
+        }
+
+        if (data.archivo_pdf) {
+            try {
+                const pdfData = Buffer.from(base64.toByteArray(data.archivo_pdf));
+                const randomNumber = random.int(1, 9000);
+                const nameKey = `Libros/${data.nombre.replace(' ', '_')}_${randomNumber}.pdf`;
+
+                await s3.putObject({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: nameKey,
+                    Body: pdfData,
+                    ContentType: 'application/pdf'
+                }).promise();
+
+                data.archivo_pdf = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${nameKey}`;
+            } catch (error) {
+                console.error("Error uploading PDF:", error);
+                return res.status(401).json({ error: 'No se pudo subir el PDF' });
+            }
+        }
+
+        const query = `
+            UPDATE libros 
+            SET 
+                titulo = ?,
+                autor = ?,
+                sinopsis = ?,
+                año_publicacion = ?,
+                etiquetas = ?
+        `;
+        const values = [
+            data.nombre,
+            data.autor,
+            data.sinopsis,
+            data.año_publicacion,
+            data.categorias
+        ];
+
+        if (data.imagen_portada) {
+            query += ", portada_url = ?";
+            values.push(data.imagen_portada);
+        }
+
+        if (data.archivo_pdf) {
+            query += ", pdf_url = ?";
+            values.push(data.archivo_pdf);
+        }
+
+        query += " WHERE id = ?";
+        values.push(data.id_libro);
+
+        try {
+            await db.execute(query, values);
+            return res.status(200).json({ mensaje: "Libro actualizado exitosamente" });
+        } catch (error) {
+            console.error(error);
+            return res.status(401).json({ error: 'No se pudo actualizar el libro' });
+        }
+    }
+
+    async deleteBook(req, res) {
+        const libroId = req.body.id_libro;
+
+        try {
+            const [libro] = await db.execute('SELECT * FROM libros WHERE id = ?', [libroId]);
+            if (!libro.length) {
+                return res.status(404).json({ error: 'Libro no encontrado' });
+            }
+
+            await db.execute("DELETE FROM adquisiciones WHERE libro_id = ?", [libroId]);
+            await db.execute("DELETE FROM libros WHERE id = ?", [libroId]);
+
+            return res.status(200).json({ mensaje: 'Libro eliminado correctamente' });
+        } catch (error) {
+            console.error(error);
+            return res.status(401).json({ error: 'No se pudo eliminar el libro' });
+        }
+    }
+
+    async getBooks(req, res) {
+        const idUser = req.body.id_usuario;
+
+        try {
+            const [adquisiciones] = await db.execute("SELECT * FROM adquisiciones WHERE usuario_id = ?", [idUser]);
+            const [libros] = await db.execute("SELECT * FROM libros");
+
+            libros.forEach(libro => {
+                libro.adquirido = adquisiciones.some(adquisicion => adquisicion.libro_id === libro.id);
+            });
+
+            return res.json(libros);
+        } catch (error) {
+            console.error(error);
+            return res.status(401).json({ error: 'No se pudo obtener los libros' });
+        }
+    }
+
+    async acquireBook(req, res) {
+        const data = req.body;
+
+        try {
+            await db.execute("INSERT INTO adquisiciones (usuario_id, libro_id) VALUES (?, ?)", [data.id_usuario, data.id_libro]);
+            return res.status(200).json({ mensaje: 'Libro adquirido correctamente' });
+        } catch (error) {
+            console.error(error);
+            return res.status(401).json({ error: 'No se pudo adquirir el libro' });
+        }
+    }
+}
+
+export default new BookController();
